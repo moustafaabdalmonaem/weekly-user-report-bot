@@ -1,0 +1,170 @@
+{
+  "name": "Weekly User Report Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "f0ec2c55-b137-4320-8285-df68f385d9b2",
+      "name": "Every Monday 9AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -16,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/users",
+        "options": {}
+      },
+      "id": "c7da5f6f-a105-46d5-ae34-7a2b7ab485b6",
+      "name": "Fetch Users",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "name",
+              "value": "={{ $json.name.toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "city",
+              "value": "={{ $json.address.city }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1117eaa4-cc3e-4425-8d3b-1ad78f52d7ec",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turn the list of cleaned user items into one summary message\nconst items = $input.all();\n\nlet lines = items.map((item, index) => {\n  const u = item.json;\n  return `${index + 1}. ${u.name} — ${u.email} (${u.city})`;\n});\n\nconst today = $now.toFormat('dd MMM yyyy');\n\nconst message = `📋 Weekly User Report — ${today}\\n\\nTotal users: ${items.length}\\n\\n${lines.join('\\n')}`;\n\nreturn [{ json: { message, total: items.length, generatedAt: today } }];"
+      },
+      "id": "cf6449fc-f19f-468b-9f74-34a28577518e",
+      "name": "Build Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId || 'YOUR_CHAT_ID' }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "id": "84efde64-c3da-4a6a-b51e-81ef3841ebd0",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        -112
+      ],
+      "webhookId": "81a1db35-7406-41dc-a61e-8349dc82a373",
+      "credentials": {
+        "telegramApi": {
+          "id": "3OBy8q2lUQuidhCb",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Monday 9AM": {
+      "main": [
+        [
+          {
+            "node": "Fetch Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Users": {
+      "main": [
+        [
+          {
+            "node": "Clean Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "Build Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6c83517e-214f-4b05-867d-e07527ab1e0d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d81e001e9d59947a771f174989353dc32d72525ea939391fa8cdf98b8208fb81"
+  },
+  "nodeGroups": [],
+  "id": "tvGu0Trp8am3GKA2",
+  "tags": []
+}
